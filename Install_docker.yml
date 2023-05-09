@@ -1,0 +1,10 @@
+---
+- name: Install docker
+  hosts: localhost
+  remote_user: root
+
+  tasks:
+  - name: Install docker
+    apt:
+      name: docker
+      state: latest
