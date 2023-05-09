@@ -66,6 +66,3 @@
         command: "jenkins-agent -url http://jenkins_controller:8080/ {{ jenkins_agent_name }}"
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
-
-volumes:
-  jenkins_home: {}
