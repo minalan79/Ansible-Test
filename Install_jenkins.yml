@@ -1,25 +1,73 @@
-- name: Install Jenkins Controller with Docker
+---
+- name: Install Jenkins controller in Docker and complete initial setup
   hosts: localhost
-  become: true
   gather_facts: false
 
   tasks:
-    - name: Add current user to Docker group
-      user:
-        name: "{{ ansible_user }}"
-        groups: docker
-        append: yes
+    - name: Install Docker package
+      become: true
+      apt:
+        name: docker.io
+        state: present
 
-    - name: Start Jenkins container
+    - name: Start Docker service
+      become: true
+      service:
+        name: docker
+        state: started
+
+    - name: Install Docker Python SDK
+      become: true
+      pip:
+        name: docker
+
+    - name: Pull Jenkins Docker image
+      become: true
+      community.docker.docker_image:
+        name: jenkins/jenkins:lts
+        state: present
+
+    - name: Create Jenkins Docker container
+      become: true
       community.docker.docker_container:
-        name: jenkins
+        name: jenkins_controller
         image: jenkins/jenkins:lts
+        state: started
         restart_policy: always
+        env:
+          JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+        volumes:
+          - "jenkins_home:/var/jenkins_home"
         ports:
           - "8080:8080"
           - "50000:50000"
-        environment:
-          - JENKINS_OPTS="--argumentsRealm.passwd.admin=admin --argumentsRealm.roles.admin=admin"
-        volumes:
-          - jenkins_home:/var/jenkins_home
-        user: "{{ ansible_user }}"
+
+    - name: Wait for Jenkins to start
+      uri:
+        url: http://localhost:8080
+        return_content: yes
+      register: jenkins_status
+      until: jenkins_status.content.find('Unlock Jenkins') != -1
+      retries: 10
+      delay: 10
+
+    - name: Get Jenkins initial admin password
+      command: "docker exec jenkins_controller cat /var/jenkins_home/secrets/initialAdminPassword"
+      register: jenkins_password
+
+    - name: Set up Jenkins admin user
+      uri:
+        url: http://localhost:8080/setupWizard/validateAdminUser
+        method: POST
+        body: "username=admin&password=admin123&password2=admin123"
+        status_code: 302
+        headers:
+          Content-Type: "application/x-www-form-urlencoded"
+        follow_redirects: none
+        validate_certs: no
+      register: admin_user_response
+      when: jenkins_password.stdout is defined
+
+    - name: Display Jenkins admin user response
+      debug:
+        var: admin_user_response
