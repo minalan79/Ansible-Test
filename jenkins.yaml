@@ -1,7 +1,13 @@
 jenkins:
+  systemMessage: "Welcome to Jenkins!"
   securityRealm:
     local:
       allowsSignup: false
       users:
-        - id: "admin"
-          password: "admin123"
+        - id: admin
+          password: admin123
+  authorizationStrategy:
+    loggedInUsersCanDoAnything: true
+  unsecured:
+    location:
+      url: "/"
