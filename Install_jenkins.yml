@@ -5,6 +5,8 @@
   vars:
     jenkins_port: 8080
     jenkins_agent_name: my_agent
+    jenkins_admin_username: admin
+    jenkins_admin_password: admin123
   tasks:
     - name: Install Docker dependencies
       apt:
@@ -33,7 +35,7 @@
         enabled: yes
 
     - name: Install Jenkins controller
-      community.docker.docker_container:
+      docker_container:
         name: jenkins_controller
         image: jenkins/jenkins:lts
         restart_policy: always
@@ -41,25 +43,14 @@
           - "{{ jenkins_port }}:8080"
         volumes:
           - jenkins_home:/var/jenkins_home
+          - ./jenkins.yaml:/var/jenkins_home/jenkins.yaml
 
     - name: Wait for Jenkins to start
       pause:
         seconds: 30
 
-    - name: Get Jenkins CLI JAR
-      command: >
-        docker cp jenkins_controller:/var/jenkins_home/war/WEB-INF/jenkins-cli.jar jenkins-cli.jar
-      args:
-        creates: jenkins-cli.jar
-      delegate_to: localhost
-
-    - name: Register Jenkins agent
-      command: >
-        java -jar jenkins-cli.jar -s http://localhost:{{ jenkins_port }}/ create-node {{ jenkins_agent_name }}
-      delegate_to: localhost
-
     - name: Install Jenkins agent
-      community.docker.docker_container:
+      docker_container:
         name: jenkins_agent
         image: jenkins/inbound-agent:latest
         restart_policy: always
