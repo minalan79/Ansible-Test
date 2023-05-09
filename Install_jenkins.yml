@@ -1,32 +1,55 @@
 ---
-- name: Revert Jenkins and Docker Installation
+- name: Install Jenkins and Docker
   hosts: localhost
   become: yes
   vars:
     jenkins_port: 8080
     jenkins_agent_name: my_agent
   tasks:
-    - name: Stop and remove Jenkins agent container
-      command: >
-        docker stop jenkins_agent && docker rm jenkins_agent
-      ignore_errors: true
-
-    - name: Stop and remove Jenkins controller container
-      command: >
-        docker stop jenkins_controller && docker rm jenkins_controller
-      ignore_errors: true
-
-    - name: Remove Jenkins CLI JAR from Ansible control machine
-      file:
-        path: jenkins-cli.jar
-        state: absent
-
-    - name: Uninstall Docker
+    - name: Install Docker dependencies
       apt:
-        name: docker-ce
-        state: absent
+        name: ["apt-transport-https", "ca-certificates", "curl", "gnupg-agent", "software-properties-common"]
+        state: present
 
-    - name: Remove Docker repository
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
       apt_repository:
         repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-        state: absent
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Jenkins controller
+      command: >
+        docker run -d -p {{ jenkins_port }}:8080 --name jenkins_controller jenkins/jenkins:lts
+
+    - name: Wait for Jenkins to start
+      pause:
+        seconds: 30
+
+    - name: Get Jenkins CLI JAR
+      command: >
+        docker cp jenkins_controller:/var/jenkins_home/war/WEB-INF/jenkins-cli.jar jenkins-cli.jar
+      args:
+        creates: jenkins-cli.jar
+
+    - name: Register Jenkins agent
+      command: >
+        java -jar jenkins-cli.jar -s http://localhost:{{ jenkins_port }}/ create-node {{ jenkins_agent_name }}
+
+    - name: Install Jenkins agent
+      command: >
+        docker run -d --name jenkins_agent --link jenkins_controller -v /var/run/docker.sock:/var/run/docker.sock jenkins/inbound-agent:latest -url http://jenkins_controller:8080/ {{ jenkins_agent_name }}
