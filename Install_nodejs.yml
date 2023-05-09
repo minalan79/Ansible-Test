@@ -7,4 +7,4 @@
   - name: Install nodejs
     apt:
       name: nodejs
-      state: latest
+      state: absent
