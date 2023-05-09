@@ -6,5 +6,5 @@
   tasks:
   - name: Install java
     apt:
-      name: openjdk-11-jdk-11.0.16
+      name: openjdk-11-jdk
       state: latest
