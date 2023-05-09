@@ -7,4 +7,4 @@
   - name: Install java
     apt:
       name: openjdk-11-jdk
-      state: latest
+      state: absent
