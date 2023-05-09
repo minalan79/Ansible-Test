@@ -1,55 +1,32 @@
 ---
-- name: Install Jenkins and Docker
+- name: Revert Jenkins and Docker Installation
   hosts: localhost
   become: yes
-  become_user: root
   vars:
     jenkins_port: 8080
     jenkins_agent_name: my_agent
   tasks:
-    - name: Install Docker dependencies
-      apt:
-        name: ["apt-transport-https", "ca-certificates", "curl", "gnupg-agent", "software-properties-common"]
-        state: present
+    - name: Stop and remove Jenkins agent container
+      command: >
+        docker stop jenkins_agent && docker rm jenkins_agent
+      ignore_errors: true
 
-    - name: Add Docker GPG key
-      apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+    - name: Stop and remove Jenkins controller container
+      command: >
+        docker stop jenkins_controller && docker rm jenkins_controller
+      ignore_errors: true
 
-    - name: Add Docker repository
-      apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-        state: present
+    - name: Remove Jenkins CLI JAR from Ansible control machine
+      file:
+        path: jenkins-cli.jar
+        state: absent
 
-    - name: Install Docker
+    - name: Uninstall Docker
       apt:
         name: docker-ce
-        state: present
+        state: absent
 
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
-    - name: Install Jenkins controller
-      community.docker.docker_container:
-        name: jenkins_controller
-        image: jenkins/jenkins:lts
-        restart_policy: always
-        published_ports: "{{ jenkins_port }}:8080"
-
-    - name: Register Jenkins agent
-      command: >
-        docker exec jenkins_controller
-        java -jar /var/jenkins_home/war/WEB-INF/jenkins-cli.jar
-        -s http://localhost:{{ jenkins_port }}/ create-node {{ jenkins_agent_name }}
-
-    - name: Install Jenkins agent
-      community.docker.docker_container:
-        name: jenkins_agent
-        image: jenkins/inbound-agent:latest
-        command: "jenkins-agent -url http://localhost:{{ jenkins_port }}/ {{ jenkins_agent_name }}"
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
+    - name: Remove Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: absent
