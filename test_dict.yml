@@ -8,4 +8,4 @@
       set_fact:
         dict1: {"var1":"2", "var2":"1"}
     - debug:
-        msg: "{{ dict1 }}"
+        msg: "{{ dict1.var1 }}"
