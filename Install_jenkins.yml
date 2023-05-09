@@ -2,6 +2,7 @@
 - name: Install Jenkins and Docker
   hosts: localhost
   become: yes
+  become_user: root
   vars:
     jenkins_port: 8080
     jenkins_agent_name: my_agent
