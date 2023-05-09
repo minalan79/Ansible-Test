@@ -35,7 +35,7 @@
         enabled: yes
 
     - name: Install Jenkins controller
-      docker_container:
+      community.docker.docker_container:
         name: jenkins_controller
         image: jenkins/jenkins:lts
         restart_policy: always
@@ -50,7 +50,7 @@
         seconds: 30
 
     - name: Install Jenkins agent
-      docker_container:
+      community.docker.docker_container:
         name: jenkins_agent
         image: jenkins/inbound-agent:latest
         restart_policy: always
