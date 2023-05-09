@@ -4,8 +4,8 @@ jenkins:
     local:
       allowsSignup: false
       users:
-        - id: admin
-          password: admin123
+        - id: jenkins-admin
+          password: butler
   authorizationStrategy:
     loggedInUsersCanDoAnything: true
   unsecured:
