@@ -1,0 +1,54 @@
+---
+- name: Install Jenkins and Docker
+  hosts: target_machine
+  become: yes
+  vars:
+    jenkins_port: 8080
+    jenkins_agent_name: my_agent
+  tasks:
+    - name: Install Docker dependencies
+      apt:
+        name: ["apt-transport-https", "ca-certificates", "curl", "gnupg-agent", "software-properties-common"]
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Jenkins controller
+      docker_container:
+        name: jenkins_controller
+        image: jenkins/jenkins:lts
+        restart_policy: always
+        published_ports: "{{ jenkins_port }}:8080"
+
+    - name: Register Jenkins agent
+      command: >
+        docker exec jenkins_controller
+        java -jar /var/jenkins_home/war/WEB-INF/jenkins-cli.jar
+        -s http://localhost:{{ jenkins_port }}/ create-node {{ jenkins_agent_name }}
+
+    - name: Install Jenkins agent
+      docker_container:
+        name: jenkins_agent
+        image: jenkins/inbound-agent:latest
+        command: "jenkins-agent -url http://localhost:{{ jenkins_port }}/ {{ jenkins_agent_name }}"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
