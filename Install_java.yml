@@ -1,10 +1,10 @@
 ---
-- name: Install docker
+- name: Install java
   hosts: localhost
   remote_user: root
 
   tasks:
-  - name: Install docker
+  - name: Install java
     apt:
-      name: docker
+      name: openjdk-11-jdk
       state: latest
