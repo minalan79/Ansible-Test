@@ -1,10 +1,10 @@
 ---
-- name: Install java
+- name: Install nodejs
   hosts: localhost
   remote_user: root
 
   tasks:
-  - name: Install java
+  - name: Install nodejs
     apt:
-      name: openjdk-11-jdk
+      name: nodejs
       state: latest
