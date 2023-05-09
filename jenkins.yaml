@@ -3,5 +3,5 @@ jenkins:
     local:
       allowsSignup: false
       users:
-        - id: admin
-          password: admin123
+        - id: "admin"
+          password: "admin123"
