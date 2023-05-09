@@ -4,12 +4,6 @@
   gather_facts: false
 
   tasks:
-    - name: Pull Jenkins Docker image
-      become: true
-      community.docker.docker_image:
-        name: jenkins/jenkins:lts
-        state: present
-
     - name: Create Jenkins Docker container
       become: true
       community.docker.docker_container:
