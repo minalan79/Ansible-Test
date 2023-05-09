@@ -4,23 +4,6 @@
   gather_facts: false
 
   tasks:
-    - name: Install Docker package
-      become: true
-      apt:
-        name: docker.io
-        state: present
-
-    - name: Start Docker service
-      become: true
-      service:
-        name: docker
-        state: started
-
-    - name: Install Docker Python SDK
-      become: true
-      pip:
-        name: docker
-
     - name: Pull Jenkins Docker image
       become: true
       community.docker.docker_image:
