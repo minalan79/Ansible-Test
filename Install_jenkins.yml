@@ -1,17 +1,13 @@
----
-- name: Install Jenkins and Docker
+- name: Install Jenkins Controller with Docker
   hosts: localhost
-  become: yes
-  vars:
-    jenkins_port: 8080
-    jenkins_agent_name: my_agent
-    jenkins_admin_username: admin
-    jenkins_admin_password: admin123
+  become: true
+  gather_facts: false
+
   tasks:
     - name: Install Docker dependencies
       apt:
-        name: ["apt-transport-https", "ca-certificates", "curl", "gnupg-agent", "software-properties-common"]
-        state: present
+        name: ['apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common']
+        update_cache: yes
 
     - name: Add Docker GPG key
       apt_key:
@@ -20,7 +16,7 @@
 
     - name: Add Docker repository
       apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable
         state: present
 
     - name: Install Docker
@@ -28,32 +24,22 @@
         name: docker-ce
         state: present
 
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-        enabled: yes
+    - name: Add current user to Docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
 
-    - name: Install Jenkins controller
+    - name: Start Jenkins container
       community.docker.docker_container:
-        name: jenkins_controller
+        name: jenkins
         image: jenkins/jenkins:lts
         restart_policy: always
         ports:
-          - "{{ jenkins_port }}:8080"
+          - "8080:8080"
+          - "50000:50000"
+        environment:
+          - JENKINS_OPTS="--argumentsRealm.passwd.admin=admin --argumentsRealm.roles.admin=admin"
         volumes:
           - jenkins_home:/var/jenkins_home
-          - ./jenkins.yaml:/var/jenkins_home/jenkins.yaml
-
-    - name: Wait for Jenkins to start
-      pause:
-        seconds: 30
-
-    - name: Install Jenkins agent
-      community.docker.docker_container:
-        name: jenkins_agent
-        image: jenkins/inbound-agent:latest
-        restart_policy: always
-        command: "jenkins-agent -url http://jenkins_controller:8080/ {{ jenkins_agent_name }}"
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
+        user: "{{ ansible_user }}"
