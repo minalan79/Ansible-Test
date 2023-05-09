@@ -33,8 +33,14 @@
         enabled: yes
 
     - name: Install Jenkins controller
-      command: >
-        docker run -d -p {{ jenkins_port }}:8080 --name jenkins_controller jenkins/jenkins:lts
+      docker_container:
+        name: jenkins_controller
+        image: jenkins/jenkins:lts
+        restart_policy: always
+        ports:
+          - "{{ jenkins_port }}:8080"
+        volumes:
+          - jenkins_home:/var/jenkins_home
 
     - name: Wait for Jenkins to start
       pause:
@@ -45,11 +51,21 @@
         docker cp jenkins_controller:/var/jenkins_home/war/WEB-INF/jenkins-cli.jar jenkins-cli.jar
       args:
         creates: jenkins-cli.jar
+      delegate_to: localhost
 
     - name: Register Jenkins agent
       command: >
         java -jar jenkins-cli.jar -s http://localhost:{{ jenkins_port }}/ create-node {{ jenkins_agent_name }}
+      delegate_to: localhost
 
     - name: Install Jenkins agent
-      command: >
-        docker run -d --name jenkins_agent --link jenkins_controller -v /var/run/docker.sock:/var/run/docker.sock jenkins/inbound-agent:latest -url http://jenkins_controller:8080/ {{ jenkins_agent_name }}
+      docker_container:
+        name: jenkins_agent
+        image: jenkins/inbound-agent:latest
+        restart_policy: always
+        command: "jenkins-agent -url http://jenkins_controller:8080/ {{ jenkins_agent_name }}"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home: {}
