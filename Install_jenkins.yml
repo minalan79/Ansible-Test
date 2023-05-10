@@ -38,5 +38,3 @@
         image: jenkins/jenkins:lts
         restart_policy: always
         published_ports: "{{ jenkins_port }}:8080"
-        volumes:
-          - jenkins_home:/var/jenkins_home
