@@ -4,10 +4,12 @@ jenkins:
     local:
       allowsSignup: false
       users:
-        - id: jenkins-admin
-          password: butler
+        - id: "admin"
+          password: "admin123"
   authorizationStrategy:
-    loggedInUsersCanDoAnything: true
-  unsecured:
-    location:
-      url: "/"
+    globalMatrix:
+      permissions:
+        - "Overall:admin=admin"
+        - "Job:configure=admin"
+        - "Job:build=admin"
+        - "Job:cancel=admin"
