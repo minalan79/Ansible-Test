@@ -11,15 +11,7 @@
         ports:
           - "80:80"
         restart_policy: always
- 
-    - name: Create sites-enabled directory inside container
-      docker_container:
-        name: apache_container
-        command: mkdir -p /etc/apache2/sites-enabled
-        state: started
-        recreate: no
-        detach: yes
- 
+
     - name: Configure Apache HTTP as reverse proxy
       copy:
         content: |
@@ -30,13 +22,13 @@
               ProxyPassMatch ^/(.*?)/?$ http://jenkins_container:8080/$1/ nocanon
               ProxyPassReverse / http://jenkins_container:8080/
           </VirtualHost>
-        dest: /etc/apache2/sites-available/reverse-proxy.conf
+        dest: /etc/apache2/conf-available/reverse-proxy.conf
       notify: Restart Apache
 
     - name: Enable reverse proxy configuration
       file:
-        src: /etc/apache2/sites-available/reverse-proxy.conf
-        dest: /etc/apache2/sites-enabled/reverse-proxy.conf
+        src: /etc/apache2/conf-available/reverse-proxy.conf
+        dest: /etc/apache2/conf-enabled/reverse-proxy.conf
         state: link
       notify: Restart Apache
 
