@@ -1,47 +1,40 @@
 ---
-- name: Create Jenkins Controller in Docker
-  hosts: localhost
-  become: true
+- name: Install Jenkins and Docker
+  hosts: target_machine
+  become: yes
   vars:
-    jenkins_docker_image: jenkins/jenkins:lts
     jenkins_port: 8080
-    jenkins_home: /var/jenkins_home
-    jenkins_local_user: your_local_user
-    jenkins_local_password: your_local_password
-
+    jenkins_agent_name: my_agent
   tasks:
-    - name: Start Jenkins container
-      docker_container:
-        name: jenkins_controller
-        image: "{{ jenkins_docker_image }}"
-        ports:
-          - "{{ jenkins_port }}:8080"
-        volumes:
-          - "{{ jenkins_home }}:/var/jenkins_home"
-        detach: yes
+    - name: Install Docker dependencies
+      apt:
+        name: ["apt-transport-https", "ca-certificates", "curl", "gnupg-agent", "software-properties-common"]
+        state: present
 
-    - name: Wait for Jenkins to start
-      wait_for:
-        host: localhost
-        port: "{{ jenkins_port }}"
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
         state: started
-        timeout: 60
+        enabled: yes
 
-    - name: Install Jenkins CLI
-      shell: |
-        curl -sSL https://get.jenkins.io/war-stable/latest/jenkins.war -o jenkins.war
-        cp jenkins.war {{ jenkins_home }}/jenkins.war
-      args:
-        chdir: "{{ jenkins_home }}"
-
-    - name: Set up Jenkins security
-      shell: |
-        echo "jenkins.model.Jenkins.instance.securityRealm.createAccount('{{ jenkins_local_user }}', '{{ jenkins_local_password }}')" | java -jar jenkins.war groovy =
-      args:
-        chdir: "{{ jenkins_home }}"
-        executable: /bin/bash
-
-    - name: Restart Jenkins container
+    - name: Install Jenkins controller
       docker_container:
         name: jenkins_controller
-        state: restarted
+        image: jenkins/jenkins:lts
+        restart_policy: always
+        published_ports: "{{ jenkins_port }}:8080"
