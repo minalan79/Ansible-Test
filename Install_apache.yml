@@ -11,7 +11,12 @@
         ports:
           - "80:80"
         restart_policy: always
-
+ 
+    - name: Create sites-enabled directory
+      file:
+        path: /etc/apache2/sites-enabled
+        state: directory
+ 
     - name: Configure Apache HTTP as reverse proxy
       copy:
         content: |
