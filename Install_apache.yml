@@ -12,10 +12,13 @@
           - "80:80"
         restart_policy: always
  
-    - name: Create sites-enabled directory
-      file:
-        path: /etc/apache2/sites-enabled
-        state: directory
+    - name: Create sites-enabled directory inside container
+      docker_container:
+        name: apache_container
+        command: mkdir -p /etc/apache2/sites-enabled
+        state: started
+        recreate: no
+        detach: yes
  
     - name: Configure Apache HTTP as reverse proxy
       copy:
