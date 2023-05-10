@@ -3,9 +3,6 @@ jenkins:
   securityRealm:
     local:
       allowsSignup: false
-      users:
-        - id: "admin"
-          password: "admin123"
   authorizationStrategy:
     globalMatrix:
       permissions:
@@ -13,3 +10,6 @@ jenkins:
         - "Job:configure=admin"
         - "Job:build=admin"
         - "Job:cancel=admin"
+ groovyScripts:
+    sandbox:
+      - script: /var/jenkins_home/init.groovy
