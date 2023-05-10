@@ -40,5 +40,3 @@
         published_ports: "{{ jenkins_port }}:8080"
         volumes:
           - jenkins_home:/var/jenkins_home
-          - ./jenkins.yaml:/var/jenkins_home/jenkins.yaml
-          - ./init.groovy:/var/jenkins_home/init.groovy
