@@ -1,6 +1,6 @@
 ---
 - name: Install Jenkins and Docker
-  hosts: target_machine
+  hosts: localhost
   become: yes
   vars:
     jenkins_port: 8080
